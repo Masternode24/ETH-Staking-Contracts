@@ -1,0 +1,80 @@
+pragma solidity >=0.7.5;
+
+interface IDepositContract {
+function deposit(
+bytes calldata pubkey,
+bytes calldata withdrawal_credentials,
+bytes calldata signature,
+bytes32 deposit_data_root
+) external payable;
+}
+
+contract StakingPool {
+mapping (address => uint) public balances;
+address payable public admin;
+uint public end;
+bool public finalized;
+uint public totalInvested;
+uint public totalChange;
+mapping(address => bool) public changeClaimed;
+mapping(bytes => bool) public pubkeysUsed;
+IDepositContract public depositContract = IDepositContract(0x07b39f4fde4a38bace212b546dac87c58dfe3fdc)
+event NewInvestor(
+    address investor
+);
+
+constructor() {
+    admin = msg.sender;
+    end = block.timestamp + 5 days;
+}
+
+function invest() external payable {
+    require(msg.value > 0, "The amount of investment must be greater than 0.");
+    require(block.timestamp < end, 'too late');
+    if(!balances[msg.sender]) {
+        emit NewInvestor(msg.sender);
+    }
+    uint fee = msg.value * 1 / 100;
+    uint amountInvested = msg.value - fee;
+    admin.transfer(fee);
+    balances[msg.sender] += amountInvested;
+}
+
+function finalize() external {
+    require(block.timestamp >= end, 'too late');
+    require(finalized == false, 'already finalized');
+    finalized = true;
+    totalInvested = address (this).balance;
+    totalChange = address (this).balance % 32 ether; 
+}
+
+function getChange() external  {
+    require(finalized == true, 'not finalized');
+    require(balances[msg.sender] > 0, 'not an investor');
+    require(changeClaimed[msg.sender] == false, 'change already claimed');
+    changeClaimed[msg.sender] = true;
+    uint amount = totalChange * balances[msg.sender] / totalInvested;
+    msg.sender.transfer(amount);
+}
+
+function deposit(
+    bytes calldata pubkey,
+    bytes calldata withdrawal_credentials,
+    bytes calldata signature,
+    bytes32 deposit_data_root
+)
+    external 
+
+{
+    require(finalized == true, 'too early');
+    require(msg.sender == admin, 'only admin');
+    require(address(this).balance >= 32 ether);
+    require(address(this).balance >= 32 ether);
+    require(pubkeysUsed[pubkey] == false, 'this pubkey was already used');
+    depositContract.deposit.value(32 ether)(
+        pubkey,
+        withdrawal_credentials,
+        signature,
+        deposit_data_root
+    );
+}
