@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Staking Pool</title>
+</head>
+<body>
+    <h1>Staking Pool</h1>
+
+    <label for="invest-amount">Invest amount:</label>
+    <input type="text" id="invest-amount">
+    <button onclick="invest()">Invest</button>
+
+    <button onclick="finalize()">Finalize</button>
+
+    <button onclick="getChange()">Get Change</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.3.0/dist/web3.min.js"></script>
+    <script>
+        // Import web3 library
+        const Web3 = require('web3');
+
+        // Connect to Görli test network
+        const web3 = new Web3(new Web3.providers.HttpProvider("https://goerli.infura.io/v3/YOUR-PROJECT-ID"));
+
+        // ABI of the StakingPool contract
+        const stakingPoolABI = [{...}];
+
+        // Address of the deployed StakingPool contract
+        const stakingPoolAddress = "0x123456789abcdefghijklmnopqrstuvwxyz";
+
+        // Create contract object
+        const stakingPoolContract = new web3.eth.Contract(stakingPoolABI, stakingPoolAddress);
+
+        // Function to invest
+        function invest() {
+            // Get value from the input field
+            const amount = document.getElementById("invest-amount").value;
+
+            // Get accounts from web3
+            web3.eth.getAccounts().then(function(accounts) {
+                // Invest in the staking pool
+                stakingPoolContract.methods.invest().send({
+                    from: accounts[0],
+                    value: web3.utils.toWei(amount, 'ether'),
+                    gas: 300000
+                });
+            });
+        }
+
+        // Function to finalize
+        function finalize() {
+            // Get accounts from web3
+            web3.eth.getAccounts().then(function(accounts) {
+                // Finalize the investment period
+                stakingPoolContract.methods.finalize().send({
+                    from: accounts[0],
+                    gas: 300000
+                });
+            });
+        }
+      
+        function getChange() {
+            // Get accounts from web3
+            web3.eth.getAccounts().then(function(accounts) {
+                // Get change from the staking pool
+                stakingPoolContract.methods.getChange().send({
+                    from: accounts[0],
+                    gas: 300000
+                });
+            });
+        }
+    </script>
+</body>
+</html>
